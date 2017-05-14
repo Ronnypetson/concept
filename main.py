@@ -58,21 +58,22 @@ def concat(tr_x, tr_y, start, end):
 
 tr_xy = concat(trX,trY,0,len(trX)-1)
 te_xy = concat(teX,teY,0,len(teX)-1)
+te_x_ = concat(teX,np.zeros(teY.shape),0,len(teX)-1)
 
 # Launch the graph in a session
 with tf.Session() as sess:
     # you need to initialize all variables
     tf.initialize_all_variables().run()
 
-    for i in range(3):
+    for i in range(6):
         for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
             input_ = tr_xy[start:end]
             mask_np = np.random.binomial(1, 1 - corruption_level, input_.shape)
             sess.run(train_op, feed_dict={X: input_, mask: mask_np})
         mask_np = np.random.binomial(1, 1 - corruption_level, te_xy.shape)
         print(i, sess.run(cost, feed_dict={X: te_xy, mask: mask_np}))
-    mask_np = np.random.binomial(1, 1 - corruption_level, te_xy.shape)
-    decoded = Z.eval({X: te_xy, mask: mask_np})
+    mask_np = np.random.binomial(1, 1 - corruption_level, te_x_.shape)
+    decoded = Z.eval({X: te_x_, mask: mask_np})
 
 # plot figures
 n = 10
