@@ -1,5 +1,8 @@
 import tensorflow as tf
 import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 import input_data
 
 mnist_width = 28
@@ -53,21 +56,43 @@ def concat(tr_x, tr_y, start, end):
 		batch[i] = np.concatenate((tr_x[i],tr_y[i]))
 	return batch
 
+tr_xy = concat(trX,trY,0,len(trX)-1)
+te_xy = concat(teX,teY,0,len(teX)-1)
+
 # Launch the graph in a session
 with tf.Session() as sess:
     # you need to initialize all variables
-    tr_xy = concat(trX,trY,0,len(trX)-1)
-    te_xy = concat(teX,teY,0,len(teX)-1)
-    #print(tr_xy.shape,trX.shape,trY.shape)
     tf.initialize_all_variables().run()
 
-    for i in range(100):
+    for i in range(3):
         for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
             input_ = tr_xy[start:end]
             mask_np = np.random.binomial(1, 1 - corruption_level, input_.shape)
             sess.run(train_op, feed_dict={X: input_, mask: mask_np})
-            #if(end % 10 == 0):
-            #	print(sess.run(cost, feed_dict={X: input_, mask: mask_np}))
         mask_np = np.random.binomial(1, 1 - corruption_level, te_xy.shape)
         print(i, sess.run(cost, feed_dict={X: te_xy, mask: mask_np}))
+    mask_np = np.random.binomial(1, 1 - corruption_level, te_xy.shape)
+    decoded = Z.eval({X: te_xy, mask: mask_np})
+
+# plot figures
+n = 10
+plt.figure(figsize=(20, 4))
+
+for i in range(n):
+    # display original
+    ax = plt.subplot(2, n, i + 1)
+    plt.imshow(te_xy[i,0:28*28].reshape(28, 28))
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+
+    # display reconstruction
+    ax = plt.subplot(2, n, i + 1 + n)
+    #plt.imshow(decoded[i,0:28*28].reshape(28, 28))
+    plt.imshow(decoded[i,28*28:28*28+10].reshape(1, 10))
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+
+plt.savefig('mnist_ae1.png')
 
